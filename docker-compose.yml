@@ -1,0 +1,77 @@
+version: "3.9"
+
+services:
+  # ── FastAPI Backend ──────────────────────────────────────────────────────────
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile.api
+    container_name: climate_ai_api
+    ports:
+      - "8000:8000"
+    environment:
+      - GEE_SERVICE_ACCOUNT=${GEE_SERVICE_ACCOUNT}
+      - GEE_KEY_FILE=/app/gee-key.json
+      - DB_PATH=/app/data/climate.duckdb
+      - API_HOST=0.0.0.0
+      - API_PORT=8000
+      - MLFLOW_TRACKING_URI=/app/mlruns
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+    volumes:
+      - ./gee-key.json:/app/gee-key.json:ro   # Mount your GEE JSON key here
+      - climate_data:/app/data
+      - mlflow_data:/app/mlruns
+      - logs_data:/app/logs
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+    networks:
+      - climate_net
+
+  # ── Streamlit Frontend ───────────────────────────────────────────────────────
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+    container_name: climate_ai_frontend
+    ports:
+      - "8501:8501"
+    environment:
+      - API_HOST=api         # Resolves to the api container in Docker network
+      - API_PORT=8000
+    depends_on:
+      api:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - climate_net
+
+  # ── MLflow Tracking Server ───────────────────────────────────────────────────
+  mlflow:
+    image: ghcr.io/mlflow/mlflow:v2.12.2
+    container_name: climate_ai_mlflow
+    ports:
+      - "5000:5000"
+    command: >
+      mlflow server
+        --host 0.0.0.0
+        --port 5000
+        --backend-store-uri /mlruns
+        --default-artifact-root /mlruns
+    volumes:
+      - mlflow_data:/mlruns
+    networks:
+      - climate_net
+    restart: unless-stopped
+
+volumes:
+  climate_data:
+  mlflow_data:
+  logs_data:
+
+networks:
+  climate_net:
+    driver: bridge

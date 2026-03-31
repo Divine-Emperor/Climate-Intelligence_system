@@ -1,0 +1,31 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+.venv/
+venv/
+
+# Data & Models
+data/climate.duckdb
+data/climate.duckdb.wal
+models/saved/
+mlruns/
+
+# Logs
+logs/
+
+# GEE credentials (NEVER commit!)
+gee-key.json
+*.json
+
+# Environment
+.env
+
+# Docker
+.dockerignore
+
+# macOS / Linux
+.DS_Store
+*.swp
