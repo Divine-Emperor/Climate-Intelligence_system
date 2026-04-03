@@ -45,7 +45,7 @@ climate-ai-v2/
 │
 ├── models/
 │   ├── anomaly_detector.py    # Spatiotemporal Autoencoder (STAE)
-│   ├── forecaster.py          # Multivariate BiLSTM + MC Dropout
+│   ├── forecaster.py          # Multivariate BiLSTM + GNN with  MC Dropout
 │   └── model_registry.py     # MLflow experiment tracking
 │
 ├── api/
@@ -138,7 +138,7 @@ docker-compose up --build
 | POST | `/api/v1/anomaly/score/{city}` | Run scoring + persist results |
 | GET | `/api/v1/anomaly/summary` | 30-day anomaly count per city |
 | GET | `/api/v1/forecast/latest/{city}` | Latest 10-day forecast |
-| POST | `/api/v1/forecast/train/{city}` | Train BiLSTM forecaster |
+| POST | `/api/v1/forecast/train/{city}` | Train BiLSTM + Gnn forecaster |
 | POST | `/api/v1/forecast/generate/{city}` | Generate new forecast |
 
 Full Swagger docs: `http://localhost:8000/docs`
@@ -152,7 +152,7 @@ Full Swagger docs: `http://localhost:8000/docs`
 - **Output**: Anomaly score (0–1), type (heatwave/heavy_rain/cold_spell/compound), severity
 
 ### BiLSTM Forecaster
-- **Input**: Last 30 days of 6 climate variables
+- **Input**: Last 30 days of 8 climate variables
 - **Output**: 10-day forward forecast for temp_max, temp_min, temp_mean, precipitation
 - **Uncertainty**: Monte Carlo Dropout (30 stochastic passes → 95% confidence intervals)
 
